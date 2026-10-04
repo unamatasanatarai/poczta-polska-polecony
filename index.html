@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generator Druków na List Polecony Online – Poczta Polska</title>
+  <meta name="description" content="Darmowy generator druczków potwierdzenia nadania listu poleconego Poczty Polskiej. Wypełnij dane, pobierz PDF lub PNG i wydrukuj w domu.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- jsPDF CDN for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="js/template_data.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+        <div class="brand-text">
+          <h1>Poczta Polecony</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-ghost" id="btn-sample" onclick="wypelnijPrzyklad()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+          Wstaw dane przykładowe
+        </button>
+        <button type="button" class="btn btn-ghost text-danger" id="btn-clear" onclick="wyczyscFormularz()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          Wyczyść
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-layout">
+    
+    <!-- LEWA STRONA: Formularz -->
+    <section class="form-section card">
+
+
+      <form id="label-form" onsubmit="event.preventDefault();">
+        
+
+
+        <!-- Nadawca -->
+        <div class="field-group">
+          <div class="field-header">
+            <label>Nadawca</label>
+            <button type="button" class="btn-link" onclick="zamienNadawceZAdresatem()" title="Zamień dane Nadawcy i Adresata">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/></svg>
+              Zamień z Adresatem
+            </button>
+          </div>
+          <input type="text" id="nadawca-1" placeholder="Imię i nazwisko / nazwa firmy" oninput="aktualizuj()">
+          <input type="text" id="nadawca-2" placeholder="Ulica i numer domu/lokalu" oninput="aktualizuj()">
+          <input type="text" id="nadawca-3" placeholder="Dodatkowa linia (opcjonalnie)" oninput="aktualizuj()">
+          <div class="input-row">
+            <input type="text" id="nadawca-kod" placeholder="Kod pocztowy" maxlength="6" style="flex: 0 0 120px;" oninput="formatKodPocztowy(this); aktualizuj()">
+            <input type="text" id="nadawca-miasto" placeholder="Miejscowość" style="flex: 1;" oninput="aktualizuj()">
+          </div>
+        </div>
+
+        <!-- Adresat -->
+        <div class="field-group">
+          <label>Adresat</label>
+          <input type="text" id="adresat-1" placeholder="Imię i nazwisko / nazwa firmy" oninput="aktualizuj()">
+          <input type="text" id="adresat-2" placeholder="Ulica i numer domu/lokalu" oninput="aktualizuj()">
+          <input type="text" id="adresat-3" placeholder="Dodatkowa linia (opcjonalnie)" oninput="aktualizuj()">
+          <div class="input-row">
+            <input type="text" id="adresat-kod" placeholder="Kod pocztowy" maxlength="6" style="flex: 0 0 120px;" oninput="formatKodPocztowy(this); aktualizuj()">
+            <input type="text" id="adresat-miasto" placeholder="Miejscowość" style="flex: 1;" oninput="aktualizuj()">
+          </div>
+        </div>
+
+        <!-- SMS / E-mail -->
+        <div class="field-group">
+          <label for="sms-email">SMS / E-mail (opcjonalnie)</label>
+          <input type="text" id="sms-email" placeholder="np. 600-111-222 lub jan@example.com" oninput="aktualizuj()">
+        </div>
+
+        <!-- Opcje przesyłki -->
+        <div class="field-group">
+          <label>Opcje przesyłki</label>
+          <div class="checkbox-grid">
+            <label class="checkbox-card">
+              <input type="checkbox" id="opt-doreczenia" onchange="aktualizuj()">
+              <span>Potwierdzenie doręczenia albo zwrotu</span>
+            </label>
+            <label class="checkbox-card">
+              <input type="checkbox" id="opt-odbioru" onchange="aktualizuj()">
+              <span>Potwierdzenie odbioru (żółta zwrotka)</span>
+            </label>
+            <label class="checkbox-card">
+              <input type="checkbox" id="opt-priory" onchange="aktualizuj()">
+              <span>Priorytetowa</span>
+            </label>
+          </div>
+        </div>
+
+
+
+        <!-- Ustawienia PDF -->
+        <div class="field-group">
+          <label>Układ na stronie A4 do druku</label>
+          <select id="pdf-layout" onchange="aktualizuj()">
+            <option value="1a4">1 druk na arkuszu A4 (górny lewy róg)</option>
+            <option value="2a4">2 druki na arkuszu A4 (góra / dół)</option>
+            <option value="4a4">4 druki na arkuszu A4 (siatka 2x2)</option>
+            <option value="a6">Pojedynczy druk etykiety A6 (105 x 148 mm)</option>
+          </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button type="button" class="btn btn-primary btn-lg" onclick="generujPDF()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 18 15 15"></polyline></svg>
+            Generuj PDF
+          </button>
+          <button type="button" class="btn btn-success btn-lg" onclick="zapiszPNG()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            Zapisz jako PNG
+          </button>
+          <button type="button" class="btn btn-secondary btn-lg" onclick="drukuj()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Drukuj
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- PRAWA STRONA: Live Preview Canvas -->
+    <section class="preview-section card">
+
+
+      <div class="canvas-wrapper">
+        <canvas id="label-canvas" width="518" height="735"></canvas>
+      </div>
+    </section>
+
+  </main>
+
+
+
+</body>
+</html>
