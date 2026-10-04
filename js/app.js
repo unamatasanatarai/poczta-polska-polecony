@@ -4,39 +4,63 @@ var IMG_SRC = (typeof TEMPLATE_B64 !== 'undefined') ? TEMPLATE_B64 : 'etykieta.j
 var templateImage = null;
 var canvas = null;
 var ctx = null;
+var SCALE = 2; // High-DPI 2x Retina & Print scaling factor
+
+// Pamieć podręczna elementów DOM dla optymalizacji
+var elementsCache = {};
+
+function getCachedElement(id) {
+  if (!elementsCache[id]) {
+    elementsCache[id] = document.getElementById(id);
+  }
+  return elementsCache[id];
+}
 
 // Inicjalizacja przy załadowaniu strony
 document.addEventListener('DOMContentLoaded', function() {
   canvas = document.getElementById('label-canvas');
   ctx = canvas.getContext('2d');
 
-  // Wczytaj zapamiętane dane Nadawcy z localStorage
+  // Wczytaj zapamiętane dane Nadawcy z localStorage i wypełnij formularz
   wczytajZPamieci();
+
+  // Dodaj nasłuchiwanie zdarzeń blur / change na polach Nadawcy dla natychmiastowej zapisu
+  ['nadawca-1', 'nadawca-2', 'nadawca-3', 'nadawca-kod', 'nadawca-miasto'].forEach(function(id) {
+    var el = getCachedElement(id);
+    if (el) {
+      el.addEventListener('blur', zapiszWPamieci);
+      el.addEventListener('change', zapiszWPamieci);
+    }
+  });
+
+  window.addEventListener('beforeunload', zapiszWPamieci);
 
   // Wczytaj obrazek szablonu
   var img = new Image();
-  img.src = IMG_SRC;
   img.onload = function() {
     templateImage = img;
-    canvas.width = img.naturalWidth || 518;
-    canvas.height = img.naturalHeight || 735;
+    var baseW = img.naturalWidth || 518;
+    var baseH = img.naturalHeight || 735;
+    canvas.width = baseW * SCALE;
+    canvas.height = baseH * SCALE;
     rysuj();
   };
   img.onerror = function() {
     // Rysowanie awaryjnej czystej etykiety
-    canvas.width = 518;
-    canvas.height = 735;
+    canvas.width = 518 * SCALE;
+    canvas.height = 735 * SCALE;
     rysujCzyszczenie();
   };
+  img.src = IMG_SRC;
 });
 
 function val(id) {
-  var el = document.getElementById(id);
+  var el = getCachedElement(id);
   return el ? el.value.trim() : '';
 }
 
 function setVal(id, text) {
-  var el = document.getElementById(id);
+  var el = getCachedElement(id);
   if (el) el.value = text;
 }
 
@@ -58,8 +82,12 @@ function setSelectedFormat(valFormat) {
 // Główna funkcja rysująca po płótnie (canvas)
 function rysuj() {
   if (!canvas || !ctx) return;
-  var W = canvas.width;
-  var H = canvas.height;
+
+  ctx.save();
+  ctx.scale(SCALE, SCALE);
+
+  var W = 518;
+  var H = 735;
 
   ctx.clearRect(0, 0, W, H);
 
@@ -102,28 +130,33 @@ function rysuj() {
   fillTextAutoShrink(aMiasto, 240, 420, 235, 16);
 
   // 4. Potwierdzenie doręczenia albo zwrotu (Checkbox)
-  if (document.getElementById('opt-doreczenia').checked) {
+  var elDoreczenia = getCachedElement('opt-doreczenia');
+  if (elDoreczenia && elDoreczenia.checked) {
     rysujX(50, 451, 14);
   }
 
   // 5. SMS / E-mail
   var sms = val('sms-email');
   if (sms) {
-    fillTextAutoShrink(sms, 160, 494, 315, 15);
+    fillTextAutoShrink(sms, 130, 494, 345, 15);
   }
 
   // 6. Potwierdzenie odbioru (Checkbox)
-  if (document.getElementById('opt-odbioru').checked) {
+  var elOdbioru = getCachedElement('opt-odbioru');
+  if (elOdbioru && elOdbioru.checked) {
     rysujX(50, 528, 14);
   }
 
   // 7. Priorytetowa (Checkbox)
-  if (document.getElementById('opt-priory').checked) {
+  var elPriory = getCachedElement('opt-priory');
+  if (elPriory && elPriory.checked) {
     rysujX(243, 528, 14);
   }
 
-  // Zapisuj dane nadawcy w localStorage
-  zapiszWPamieci();
+  ctx.restore();
+
+  // Zapisuj dane nadawcy w localStorage z odroczeniem (debounced)
+  debouncedZapiszWPamieci();
 }
 
 // Rysowanie ikony 'X' w kratce checkboxa
@@ -141,16 +174,19 @@ function rysujX(cx, cy, size) {
   ctx.stroke();
 }
 
-// Rysowanie tekstu z automatycznym zmniejszaniem stopnia czcionki, jeśli tekst przekracza maxWidth
+// Rysowanie tekstu z automatycznym i natychmiastowym (O(1)) wyliczaniem stopnia czcionki
 function fillTextAutoShrink(text, x, y, maxWidth, maxFontSize, isBold, fontFamily) {
   if (!text) return;
   fontFamily = fontFamily || 'Arial, sans-serif';
-  var fontSize = maxFontSize || 16;
+  var maxFont = maxFontSize || 16;
   var weight = isBold ? 'bold ' : '';
 
-  ctx.font = weight + fontSize + 'px ' + fontFamily;
-  while (ctx.measureText(text).width > maxWidth && fontSize > 7) {
-    fontSize -= 0.5;
+  ctx.font = weight + maxFont + 'px ' + fontFamily;
+  var currentWidth = ctx.measureText(text).width;
+  var fontSize = maxFont;
+
+  if (currentWidth > maxWidth) {
+    fontSize = Math.max(7, Math.floor(maxFont * (maxWidth / currentWidth) * 10) / 10);
     ctx.font = weight + fontSize + 'px ' + fontFamily;
   }
 
@@ -175,38 +211,58 @@ function updateCheckboxCards() {
   });
 }
 
+// Optymalizacja renderowania za pomocą requestAnimationFrame
+var renderPending = false;
 function aktualizuj() {
   updateCheckboxCards();
-  rysuj();
+  if (!renderPending) {
+    renderPending = true;
+    requestAnimationFrame(function() {
+      rysuj();
+      renderPending = false;
+    });
+  }
 }
 
-// Automatyczne formatowanie kodu pocztowego (XX-XXX)
+// Automatyczne formatowanie kodu pocztowego z zachowaniem pozycji kursora (XX-XXX)
 function formatKodPocztowy(input) {
+  var selStart = input.selectionStart;
+  var oldLen = input.value.length;
   var v = input.value.replace(/\D/g, '');
   if (v.length > 2) {
     v = v.substring(0, 2) + '-' + v.substring(2, 5);
   }
   input.value = v;
+  var newLen = input.value.length;
+  if (selStart !== null) {
+    var newPos = Math.max(0, selStart + (newLen - oldLen));
+    input.setSelectionRange(newPos, newPos);
+  }
 }
 
-// Zapisuj dane nadawcy w przeglądarce
+// Zapisuj dane nadawcy w przeglądarce z odroczeniem (debounce) oraz natychmiast przy wyjściu z pola
+var saveTimeout = null;
+function debouncedZapiszWPamieci() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(zapiszWPamieci, 200);
+}
+
 function zapiszWPamieci() {
   try {
-    localStorage.setItem('lp_nadawca_1', val('nadawca-1'));
-    localStorage.setItem('lp_nadawca_2', val('nadawca-2'));
-    localStorage.setItem('lp_nadawca_3', val('nadawca-3'));
-    localStorage.setItem('lp_nadawca_kod', val('nadawca-kod'));
-    localStorage.setItem('lp_nadawca_miasto', val('nadawca-miasto'));
+    ['1', '2', '3', 'kod', 'miasto'].forEach(function(key) {
+      localStorage.setItem('lp_nadawca_' + key, val('nadawca-' + key));
+    });
   } catch (e) {}
 }
 
 function wczytajZPamieci() {
   try {
-    if (localStorage.getItem('lp_nadawca_1')) setVal('nadawca-1', localStorage.getItem('lp_nadawca_1'));
-    if (localStorage.getItem('lp_nadawca_2')) setVal('nadawca-2', localStorage.getItem('lp_nadawca_2'));
-    if (localStorage.getItem('lp_nadawca_3')) setVal('nadawca-3', localStorage.getItem('lp_nadawca_3'));
-    if (localStorage.getItem('lp_nadawca_kod')) setVal('nadawca-kod', localStorage.getItem('lp_nadawca_kod'));
-    if (localStorage.getItem('lp_nadawca_miasto')) setVal('nadawca-miasto', localStorage.getItem('lp_nadawca_miasto'));
+    ['1', '2', '3', 'kod', 'miasto'].forEach(function(key) {
+      var saved = localStorage.getItem('lp_nadawca_' + key);
+      if (saved !== null) {
+        setVal('nadawca-' + key, saved);
+      }
+    });
   } catch (e) {}
 }
 
@@ -225,9 +281,13 @@ function wypelnijPrzyklad() {
   setVal('adresat-miasto', 'Kraków');
 
   setVal('sms-email', '600-111-222');
-  document.getElementById('opt-doreczenia').checked = false;
-  document.getElementById('opt-odbioru').checked = true;
-  document.getElementById('opt-priory').checked = true;
+  var optDor = getCachedElement('opt-doreczenia');
+  var optOdb = getCachedElement('opt-odbioru');
+  var optPrio = getCachedElement('opt-priory');
+
+  if (optDor) optDor.checked = false;
+  if (optOdb) optOdb.checked = true;
+  if (optPrio) optPrio.checked = true;
 
   rysuj();
 }
@@ -258,7 +318,7 @@ function wyczyscFormularz() {
   });
 
   ['opt-doreczenia','opt-odbioru','opt-priory'].forEach(function(id) {
-    var el = document.getElementById(id);
+    var el = getCachedElement(id);
     if (el) el.checked = false;
   });
 
@@ -280,7 +340,7 @@ function drukuj() {
   window.print();
 }
 
-// Generowanie pliku PDF za pomocą jsPDF
+// Generowanie pliku PDF za pomocą jsPDF z wydajną kompresją JPEG
 function generujPDF() {
   rysuj();
   if (typeof window.jspdf === 'undefined') {
@@ -289,8 +349,9 @@ function generujPDF() {
   }
 
   var jsPDF = window.jspdf.jsPDF;
-  var dataUrl = canvas.toDataURL('image/png');
-  var layoutMode = document.getElementById('pdf-layout').value;
+  var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  var layoutSelect = getCachedElement('pdf-layout');
+  var layoutMode = layoutSelect ? layoutSelect.value : '1a4';
 
   if (layoutMode === 'a6') {
     // Pojedynczy druk format A6 (105 x 148 mm)
@@ -299,7 +360,7 @@ function generujPDF() {
       unit: 'mm',
       format: [105, 148]
     });
-    doc.addImage(dataUrl, 'PNG', 0, 0, 105, 148);
+    doc.addImage(dataUrl, 'JPEG', 0, 0, 105, 148);
     doc.save('list-polecony-A6.pdf');
   } else {
     // Strona A4 (210 x 297 mm)
@@ -314,19 +375,20 @@ function generujPDF() {
 
     if (layoutMode === '1a4') {
       // 1 druk na arkuszu A4 w lewym górnym rogu
-      doc.addImage(dataUrl, 'PNG', 0, 0, labelW, labelH);
+      doc.addImage(dataUrl, 'JPEG', 0, 0, labelW, labelH);
     } else if (layoutMode === '2a4') {
       // 2 druki na A4 (góra i dół)
-      doc.addImage(dataUrl, 'PNG', 0, 0, labelW, labelH);
-      doc.addImage(dataUrl, 'PNG', 0, 148.5, labelW, labelH);
+      doc.addImage(dataUrl, 'JPEG', 0, 0, labelW, labelH);
+      doc.addImage(dataUrl, 'JPEG', 0, 148.5, labelW, labelH);
     } else if (layoutMode === '4a4') {
       // 4 druki na A4 (siatka 2x2)
-      doc.addImage(dataUrl, 'PNG', 0, 0, labelW, labelH);
-      doc.addImage(dataUrl, 'PNG', 105, 0, labelW, labelH);
-      doc.addImage(dataUrl, 'PNG', 0, 148.5, labelW, labelH);
-      doc.addImage(dataUrl, 'PNG', 105, 148.5, labelW, labelH);
+      doc.addImage(dataUrl, 'JPEG', 0, 0, labelW, labelH);
+      doc.addImage(dataUrl, 'JPEG', 105, 0, labelW, labelH);
+      doc.addImage(dataUrl, 'JPEG', 0, 148.5, labelW, labelH);
+      doc.addImage(dataUrl, 'JPEG', 105, 148.5, labelW, labelH);
     }
 
     doc.save('potwierdzenie-nadania-A4.pdf');
   }
 }
+

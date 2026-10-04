@@ -1,5 +1,8 @@
 # Generator druków pocztowych – list polecony
 
+> 🌐 **Aplikacja dostępna w wersji online bez instalacji:**  
+> 👉 **[Wypróbuj wersję demonstracyjną (Live Demo) ›](https://unamatasanatarai.github.io/poczta-polska-polecony/)**
+
 Niezwykle przydatne rozwiązanie, pozwalające na wygenerowanie i wydrukowanie oficjalnego potwierdzenia nadania listu poleconego, zgodnego ze wzorami Poczty Polskiej, bezpośrednio z poziomu przeglądarki internetowej.
 
 Jest to program działający w całości na Państwa urządzeniu, co pozwala uniknąć ręcznego, jakże nużącego, wypisywania formularzy. Dzięki niemu zyskujecie Państwo możliwość błyskawicznego przygotowania estetycznych etykiet gotowych do druku.
@@ -41,7 +44,12 @@ Program został napisany z wykorzystaniem czystego języka HTML, CSS oraz JavaSc
 
 ## Szybki start
 
-### Uruchomienie u siebie
+### Uruchomienie online (Live Demo)
+
+Aplikacja jest dostępna bezpośrednio pod adresem:  
+👉 **[https://unamatasanatarai.github.io/poczta-polska-polecony/](https://unamatasanatarai.github.io/poczta-polska-polecony/)**
+
+### Uruchomienie lokalne
 
 Jako że aplikacja opiera się w całości na technologiach przeglądarkowych, nie wymaga ona skomplikowanej instalacji, konfiguracji ani dostępu do serwera.
 

@@ -55,42 +55,42 @@
         <!-- Nadawca -->
         <div class="field-group">
           <div class="field-header">
-            <label>Nadawca</label>
+            <span class="field-title">Nadawca</span>
             <button type="button" class="btn-link" onclick="zamienNadawceZAdresatem()" title="Zamień dane Nadawcy i Adresata">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/></svg>
               Zamień z Adresatem
             </button>
           </div>
-          <input type="text" id="nadawca-1" placeholder="Imię i nazwisko / nazwa firmy" oninput="aktualizuj()">
-          <input type="text" id="nadawca-2" placeholder="Ulica i numer domu/lokalu" oninput="aktualizuj()">
-          <input type="text" id="nadawca-3" placeholder="Dodatkowa linia (opcjonalnie)" oninput="aktualizuj()">
+          <input type="text" id="nadawca-1" placeholder="Imię i nazwisko / nazwa firmy" aria-label="Nadawca: Imię i nazwisko lub nazwa firmy" autocomplete="section-sender name" oninput="aktualizuj()">
+          <input type="text" id="nadawca-2" placeholder="Ulica i numer domu/lokalu" aria-label="Nadawca: Ulica i numer domu" autocomplete="section-sender street-address" oninput="aktualizuj()">
+          <input type="text" id="nadawca-3" placeholder="Dodatkowa linia (opcjonalnie)" aria-label="Nadawca: Dodatkowa linia adresowa" autocomplete="section-sender address-line2" oninput="aktualizuj()">
           <div class="input-row">
-            <input type="text" id="nadawca-kod" placeholder="Kod pocztowy" maxlength="6" style="flex: 0 0 120px;" oninput="formatKodPocztowy(this); aktualizuj()">
-            <input type="text" id="nadawca-miasto" placeholder="Miejscowość" style="flex: 1;" oninput="aktualizuj()">
+            <input type="text" id="nadawca-kod" placeholder="Kod pocztowy" aria-label="Nadawca: Kod pocztowy" autocomplete="section-sender postal-code" maxlength="6" style="flex: 0 0 120px;" oninput="formatKodPocztowy(this); aktualizuj()">
+            <input type="text" id="nadawca-miasto" placeholder="Miejscowość" aria-label="Nadawca: Miejscowość" autocomplete="section-sender address-level2" style="flex: 1;" oninput="aktualizuj()">
           </div>
         </div>
 
         <!-- Adresat -->
         <div class="field-group">
-          <label>Adresat</label>
-          <input type="text" id="adresat-1" placeholder="Imię i nazwisko / nazwa firmy" oninput="aktualizuj()">
-          <input type="text" id="adresat-2" placeholder="Ulica i numer domu/lokalu" oninput="aktualizuj()">
-          <input type="text" id="adresat-3" placeholder="Dodatkowa linia (opcjonalnie)" oninput="aktualizuj()">
+          <span class="field-title">Adresat</span>
+          <input type="text" id="adresat-1" placeholder="Imię i nazwisko / nazwa firmy" aria-label="Adresat: Imię i nazwisko lub nazwa firmy" autocomplete="section-recipient name" oninput="aktualizuj()">
+          <input type="text" id="adresat-2" placeholder="Ulica i numer domu/lokalu" aria-label="Adresat: Ulica i numer domu" autocomplete="section-recipient street-address" oninput="aktualizuj()">
+          <input type="text" id="adresat-3" placeholder="Dodatkowa linia (opcjonalnie)" aria-label="Adresat: Dodatkowa linia adresowa" autocomplete="section-recipient address-line2" oninput="aktualizuj()">
           <div class="input-row">
-            <input type="text" id="adresat-kod" placeholder="Kod pocztowy" maxlength="6" style="flex: 0 0 120px;" oninput="formatKodPocztowy(this); aktualizuj()">
-            <input type="text" id="adresat-miasto" placeholder="Miejscowość" style="flex: 1;" oninput="aktualizuj()">
+            <input type="text" id="adresat-kod" placeholder="Kod pocztowy" aria-label="Adresat: Kod pocztowy" autocomplete="section-recipient postal-code" maxlength="6" style="flex: 0 0 120px;" oninput="formatKodPocztowy(this); aktualizuj()">
+            <input type="text" id="adresat-miasto" placeholder="Miejscowość" aria-label="Adresat: Miejscowość" autocomplete="section-recipient address-level2" style="flex: 1;" oninput="aktualizuj()">
           </div>
         </div>
 
         <!-- SMS / E-mail -->
         <div class="field-group">
           <label for="sms-email">SMS / E-mail (opcjonalnie)</label>
-          <input type="text" id="sms-email" placeholder="np. 600-111-222 lub jan@example.com" oninput="aktualizuj()">
+          <input type="text" id="sms-email" placeholder="np. 600-111-222 lub jan@example.com" aria-label="SMS lub E-mail powiadomienia" autocomplete="email tel" oninput="aktualizuj()">
         </div>
 
         <!-- Opcje przesyłki -->
         <div class="field-group">
-          <label>Opcje przesyłki</label>
+          <span class="field-title">Opcje przesyłki</span>
           <div class="checkbox-grid">
             <label class="checkbox-card">
               <input type="checkbox" id="opt-doreczenia" onchange="aktualizuj()">
@@ -107,11 +107,9 @@
           </div>
         </div>
 
-
-
         <!-- Ustawienia PDF -->
         <div class="field-group">
-          <label>Układ na stronie A4 do druku</label>
+          <label for="pdf-layout">Układ na stronie A4 do druku</label>
           <select id="pdf-layout" onchange="aktualizuj()">
             <option value="1a4">1 druk na arkuszu A4 (górny lewy róg)</option>
             <option value="2a4">2 druki na arkuszu A4 (góra / dół)</option>

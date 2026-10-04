@@ -158,7 +158,8 @@ body {
   align-items: center;
 }
 
-label {
+label,
+.field-title {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-main);
